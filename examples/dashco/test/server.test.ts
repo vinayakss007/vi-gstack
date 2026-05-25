@@ -184,4 +184,47 @@ describe("HTTP server (Hono + PGLite, no mocks)", () => {
     );
     expect(res.status).toBe(400);
   });
+
+  it("POST /api/insights returns deterministic insights with facts", async () => {
+    const res = await app.fetch(
+      new Request("http://local/api/insights", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          metric: "revenue",
+          values: [10, 20, 30, 40, 50],
+          labels: ["jan", "feb", "mar", "apr", "may"],
+        }),
+      }),
+    );
+    expect(res.status).toBe(200);
+    const body = (await res.json()) as {
+      served: { insights: { kind: string; text: string; facts: Record<string, unknown> }[] };
+      source: string;
+    };
+    expect(body.source).toBe("fallback");
+    const summary = body.served.insights.find((i) => i.kind === "summary");
+    expect(summary).toBeDefined();
+    expect(summary?.facts.mean).toBe(30);
+    expect(summary?.facts.min).toBe(10);
+    expect(summary?.facts.max).toBe(50);
+    expect(body.served.insights.find((i) => i.kind === "top")).toBeDefined();
+  });
+
+  it("POST /api/insights rejects labels/values length mismatch with 400", async () => {
+    const res = await app.fetch(
+      new Request("http://local/api/insights", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          metric: "revenue",
+          values: [1, 2, 3],
+          labels: ["a"],
+        }),
+      }),
+    );
+    expect(res.status).toBe(400);
+    const body = (await res.json()) as { error: string };
+    expect(body.error).toBe("labels_length_mismatch");
+  });
 });

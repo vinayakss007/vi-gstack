@@ -137,6 +137,41 @@ async function main() {
     console.log(`  unmapped source: ${fieldsBody.served.unmappedSource.join(", ")}`);
   }
 
+  console.log("\n== POST /api/insights (monthly revenue, 12 months) ==");
+  const insightsRes = await app.fetch(
+    new Request("http://local/api/insights", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        metric: "monthly revenue",
+        values: [120, 140, 160, 175, 210, 250, 600, 320, 360, 410, 480, 520],
+        labels: [
+          "Jan",
+          "Feb",
+          "Mar",
+          "Apr",
+          "May",
+          "Jun",
+          "Jul",
+          "Aug",
+          "Sep",
+          "Oct",
+          "Nov",
+          "Dec",
+        ],
+      }),
+    }),
+  );
+  const insightsBody = (await insightsRes.json()) as {
+    served: {
+      insights: { kind: string; text: string; facts: Record<string, unknown> }[];
+    };
+    source: string;
+  };
+  for (const i of insightsBody.served.insights) {
+    console.log(`  [${i.kind.padEnd(8)}] ${i.text}`);
+  }
+
   // Sanity check: deterministic primary path is unaffected by anything HTTP.
   const det = recommend({
     columns: [
