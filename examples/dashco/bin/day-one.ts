@@ -95,6 +95,48 @@ async function main() {
   console.log(`served: ${chartBody.served.chart} via ${chartBody.source}`);
   console.log(`reason: ${chartBody.served.reason}`);
 
+  console.log("\n== POST /api/fields/map (messy sales CSV -> schema) ==");
+  const fieldsRes = await app.fetch(
+    new Request("http://local/api/fields/map", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        sourceColumns: [
+          "Order Date",
+          "Total $",
+          "Cust ID",
+          "SKU",
+          "Qty",
+          "Country",
+        ],
+        targetSchema: [
+          { name: "date", aliases: ["order_date"] },
+          { name: "revenue" },
+          { name: "customer_id" },
+          { name: "product" },
+          { name: "quantity" },
+          { name: "country" },
+        ],
+      }),
+    }),
+  );
+  const fieldsBody = (await fieldsRes.json()) as {
+    served: {
+      mappings: { source: string; target: string; method: string; score: number }[];
+      unmappedSource: string[];
+      unmappedTarget: string[];
+    };
+    source: string;
+  };
+  for (const m of fieldsBody.served.mappings) {
+    console.log(
+      `  ${m.method.padEnd(8)}  ${m.score.toFixed(2)}  ${m.source.padEnd(14)} -> ${m.target}`,
+    );
+  }
+  if (fieldsBody.served.unmappedSource.length > 0) {
+    console.log(`  unmapped source: ${fieldsBody.served.unmappedSource.join(", ")}`);
+  }
+
   // Sanity check: deterministic primary path is unaffected by anything HTTP.
   const det = recommend({
     columns: [

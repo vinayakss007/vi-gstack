@@ -139,4 +139,49 @@ describe("HTTP server (Hono + PGLite, no mocks)", () => {
     );
     expect(res.status).toBe(400);
   });
+
+  it("POST /api/fields/map maps a messy CSV to the schema deterministically", async () => {
+    const res = await app.fetch(
+      new Request("http://local/api/fields/map", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          sourceColumns: ["Order Date", "Total $", "Cust ID", "SKU", "Qty"],
+          targetSchema: [
+            { name: "date", aliases: ["order_date"] },
+            { name: "revenue" },
+            { name: "customer_id" },
+            { name: "product" },
+            { name: "quantity" },
+          ],
+        }),
+      }),
+    );
+    expect(res.status).toBe(200);
+    const body = (await res.json()) as {
+      served: { mappings: { source: string; target: string; method: string }[] };
+      deterministic: { mappings: { source: string; target: string }[] };
+      source: string;
+    };
+    expect(body.source).toBe("fallback");
+    const map = Object.fromEntries(
+      body.deterministic.mappings.map((m) => [m.target, m.source]),
+    );
+    expect(map["date"]).toBe("Order Date");
+    expect(map["revenue"]).toBe("Total $");
+    expect(map["customer_id"]).toBe("Cust ID");
+    expect(map["product"]).toBe("SKU");
+    expect(map["quantity"]).toBe("Qty");
+  });
+
+  it("POST /api/fields/map rejects empty input with 400", async () => {
+    const res = await app.fetch(
+      new Request("http://local/api/fields/map", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ sourceColumns: [], targetSchema: [] }),
+      }),
+    );
+    expect(res.status).toBe(400);
+  });
 });

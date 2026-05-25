@@ -10,6 +10,7 @@ import { healthRoute } from "./routes/health.js";
 import { intakeRoute } from "./routes/intake.js";
 import { digestRoute } from "./routes/digest.js";
 import { recommendRoute } from "./routes/recommend.js";
+import { fieldsRoute } from "./routes/fields.js";
 
 export interface AppDeps {
   db: Db;
@@ -23,6 +24,7 @@ export function createApp(deps: AppDeps) {
   app.route("/api/intake", intakeRoute(deps));
   app.route("/api/digest", digestRoute(deps));
   app.route("/api/charts/recommend", recommendRoute());
+  app.route("/api/fields", fieldsRoute());
   return app;
 }
 
