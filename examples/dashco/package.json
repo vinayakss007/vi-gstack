@@ -1,0 +1,21 @@
+{
+  "name": "dashco",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Automatic-company starter on gstack. AI is not load-bearing.",
+  "type": "module",
+  "scripts": {
+    "demo": "bun run src/demo.ts",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.10",
+    "typescript": "^5.5.3",
+    "vitest": "^2.0.2"
+  }
+}
